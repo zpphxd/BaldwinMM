@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react'
 import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip as ChartTooltip, Legend as ChartLegend } from 'chart.js'
 import { Chart } from 'react-chartjs-2'
-import { brackets, champData, upsetData } from './data/brackets'
+import { brackets, champData, upsetData, r64Matchups } from './data/brackets'
 import { getTeamLogo, getTeamColor } from './data/teams'
+import BracketModal from './components/BracketModal'
+import CompareModal from './components/CompareModal'
 import './App.css'
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ChartTooltip, ChartLegend)
@@ -17,103 +19,6 @@ const colors = {
   success: '#10b981',
   warning: '#f59e0b',
   danger: '#ef4444',
-}
-
-function BracketModal({ bracket, onClose }) {
-  if (!bracket) return null
-
-  const style = bracket.upsets <= 3 ? 'Chalk' : bracket.upsets <= 6 ? 'Balanced' : 'Chaos'
-  const styleColor = bracket.upsets <= 3 ? colors.success : bracket.upsets <= 6 ? colors.warning : colors.danger
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>✕</button>
-
-        <div className="modal-header">
-          <img src={getTeamLogo(bracket.champ)} alt={bracket.champ} className="modal-logo" />
-          <div className="modal-title">
-            <h1>{bracket.name}</h1>
-            <p className="modal-champ">{bracket.champ}</p>
-          </div>
-        </div>
-
-        <div className="modal-stats">
-          <div className="modal-stat">
-            <div className="modal-stat-label">Upsets</div>
-            <div className="modal-stat-value" style={{ color: bracket.upsets >= 8 ? colors.danger : colors.warning }}>
-              {bracket.upsets}
-            </div>
-          </div>
-          <div className="modal-stat">
-            <div className="modal-stat-label">Tiebreaker</div>
-            <div className="modal-stat-value">{bracket.tb || '—'}</div>
-          </div>
-          <div className="modal-stat">
-            <div className="modal-stat-label">Style</div>
-            <div className="modal-stat-value" style={{ color: styleColor }}>
-              {style}
-            </div>
-          </div>
-          <div className="modal-stat">
-            <div className="modal-stat-label">Rank vs Pool</div>
-            <div className="modal-stat-value">
-              #{brackets.indexOf(bracket) + 1}
-            </div>
-          </div>
-        </div>
-
-        <div className="modal-analysis">
-          <h3>Bracket Analysis</h3>
-          <div className="analysis-items">
-            <div className="analysis-item">
-              <span className="analysis-label">Champion Choice:</span>
-              <span className="analysis-value">{bracket.champ} ({champData.find(c => c.team === bracket.champ)?.pct}% pool)</span>
-            </div>
-            <div className="analysis-item">
-              <span className="analysis-label">Upset Count:</span>
-              <span className="analysis-value">
-                {bracket.upsets} upsets
-                {bracket.upsets >= 8 ? ' (Very High Risk 🔥)' : bracket.upsets >= 5 ? ' (Balanced 💨)' : ' (Safe Pick ✓)'}
-              </span>
-            </div>
-            <div className="analysis-item">
-              <span className="analysis-label">Tiebreaker Strategy:</span>
-              <span className="analysis-value">
-                {bracket.tb ? `${bracket.tb} (Pool Avg: ${Math.round(brackets.filter(b => b.tb).reduce((sum, b) => sum + b.tb, 0) / brackets.filter(b => b.tb).length)})` : 'Not Submitted'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="modal-comparison">
-          <h3>Comparison to Pool</h3>
-          <div className="comparison-grid">
-            <div className="comparison-item">
-              <span>vs Avg Upsets</span>
-              <div className="comparison-bar">
-                <div className="comparison-fill" style={{
-                  width: (bracket.upsets / 12 * 100) + '%',
-                  background: colors.primary
-                }}></div>
-              </div>
-              <span>{bracket.upsets} vs {(brackets.reduce((sum, b) => sum + b.upsets, 0) / brackets.length).toFixed(1)} avg</span>
-            </div>
-            <div className="comparison-item">
-              <span>vs Avg TB</span>
-              <div className="comparison-bar">
-                <div className="comparison-fill" style={{
-                  width: (bracket.tb || 0) / 180 * 100 + '%',
-                  background: colors.accent
-                }}></div>
-              </div>
-              <span>{bracket.tb || '—'} vs {Math.round(brackets.filter(b => b.tb).reduce((sum, b) => sum + b.tb, 0) / brackets.filter(b => b.tb).length)} avg</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 export default function App() {
@@ -207,7 +112,7 @@ export default function App() {
       </header>
 
       <nav className="tabs">
-        {['overview', 'champions', 'upsets', 'brackets', 'detailed'].map(tab => (
+        {['overview', 'champions', 'upsets', 'brackets', 'rounds', 'detailed'].map(tab => (
           <button
             key={tab}
             className={activeTab === tab ? 'tab active' : 'tab'}
@@ -217,6 +122,7 @@ export default function App() {
             {tab === 'champions' && '🏆 Champions'}
             {tab === 'upsets' && '🔥 Deep Upsets'}
             {tab === 'brackets' && '📋 Brackets'}
+            {tab === 'rounds' && '📈 Rounds'}
             {tab === 'detailed' && '🔍 All Data'}
           </button>
         ))}
@@ -569,6 +475,142 @@ export default function App() {
           </div>
         )}
 
+        {/* ROUNDS TAB */}
+        {activeTab === 'rounds' && (
+          <div className="grid-2">
+            {/* CHAOS INDEX - Scatter Chart */}
+            <section className="card">
+              <h2>Chaos Index</h2>
+              <p className="chart-subtitle">All 46 brackets plotted by upsets vs tiebreaker, colored by champion</p>
+              <div className="chart-container">
+                <Chart
+                  type="scatter"
+                  data={{
+                    datasets: champData.map(champ => ({
+                      label: champ.team,
+                      data: brackets
+                        .filter(b => b.champ === champ.team && b.tb)
+                        .map(b => ({ x: b.upsets, y: b.tb })),
+                      backgroundColor: champ.color,
+                      pointRadius: 5,
+                      pointHoverRadius: 7,
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                      borderWidth: 1,
+                    }))
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                      legend: { position: 'right', labels: { font: { size: 10 } } },
+                      tooltip: {
+                        callbacks: {
+                          label: (ctx) => {
+                            const bracket = brackets.find(b => b.upsets === ctx.raw.x && b.tb === ctx.raw.y && b.champ === ctx.dataset.label)
+                            return bracket ? `${bracket.name}: ${ctx.raw.x} upsets, ${ctx.raw.y} TB` : ''
+                          }
+                        }
+                      }
+                    },
+                    scales: {
+                      x: { title: { display: true, text: 'Upsets' }, min: 0, max: 13 },
+                      y: { title: { display: true, text: 'Tiebreaker' }, min: 60, max: 200 }
+                    }
+                  }}
+                />
+              </div>
+            </section>
+
+            {/* CHAMPION CLUSTERS - Bar Chart */}
+            <section className="card">
+              <h2>Champion Clusters</h2>
+              <p className="chart-subtitle">Average upsets per champion (top 7)</p>
+              <div className="chart-container">
+                <Chart
+                  type="bar"
+                  data={{
+                    labels: champData.slice(0, 7).map(c => c.team),
+                    datasets: [{
+                      label: 'Avg Upsets',
+                      data: champData.slice(0, 7).map(c => {
+                        const bracketsWithChamp = brackets.filter(b => b.champ === c.team)
+                        return bracketsWithChamp.length > 0
+                          ? (bracketsWithChamp.reduce((sum, b) => sum + b.upsets, 0) / bracketsWithChamp.length).toFixed(1)
+                          : 0
+                      }),
+                      backgroundColor: champData.slice(0, 7).map(c => c.color),
+                      borderRadius: 6,
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, max: 8 } }
+                  }}
+                />
+              </div>
+            </section>
+
+            {/* TIEBREAKER DISTRIBUTION - Histogram */}
+            <section className="card">
+              <h2>Tiebreaker Distribution</h2>
+              <p className="chart-subtitle">Count of brackets in each TB bin</p>
+              <div className="chart-container">
+                <Chart
+                  type="bar"
+                  data={{
+                    labels: Object.keys(stats.tbBins).sort(),
+                    datasets: [{
+                      label: 'Brackets',
+                      data: Object.keys(stats.tbBins).sort().map(k => stats.tbBins[k]),
+                      backgroundColor: colors.primary,
+                      borderRadius: 6,
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                  }}
+                />
+              </div>
+            </section>
+
+            {/* UPSET CONSENSUS - Horizontal Bar Chart */}
+            <section className="card">
+              <h2>Upset Consensus</h2>
+              <p className="chart-subtitle">How many brackets picked each upset (sorted)</p>
+              <div className="chart-container">
+                <Chart
+                  type="bar"
+                  data={{
+                    labels: [...upsetData]
+                      .sort((a, b) => b.count - a.count)
+                      .map(u => `${u.team} vs ${u.vs}`),
+                    datasets: [{
+                      label: 'Brackets',
+                      data: [...upsetData]
+                        .sort((a, b) => b.count - a.count)
+                        .map(u => u.count),
+                      backgroundColor: colors.danger,
+                      borderRadius: 6,
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, max: 46 } }
+                  }}
+                />
+              </div>
+            </section>
+          </div>
+        )}
+
         {/* DETAILED TAB */}
         {activeTab === 'detailed' && (
           <div>
@@ -626,7 +668,8 @@ export default function App() {
         )}
       </main>
 
-      <BracketModal bracket={selectedBracket} onClose={() => setSelectedBracket(null)} />
+      <BracketModal bracket={selectedBracket} onClose={() => setSelectedBracket(null)} setCompareBracket={setCompareBracket} />
+      <CompareModal bracket1={selectedBracket} bracket2={compareBracket} onClose={() => setCompareBracket(null)} />
     </div>
   )
 }

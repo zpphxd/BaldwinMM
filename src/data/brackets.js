@@ -72,3 +72,18 @@ export const upsetData = [
   {team:'Akron',vs:'Texas Tech',seed:12,count:10,pct:21.7},
   {team:'High Point',vs:'Wisconsin',seed:12,count:9,pct:19.6},
 ];
+
+export const r64Matchups = [
+  { fav: 'Arizona', dog: 'High Point', favPct: 80, dogPct: 20, region: 'WEST' },
+  { fav: 'Wisconsin', dog: 'Akron', favPct: 78, dogPct: 22, region: 'MIDWEST' },
+  { fav: 'Villanova', dog: 'Utah State', favPct: 72, dogPct: 28, region: 'WEST' },
+  { fav: 'Clemson', dog: 'Iowa', favPct: 75, dogPct: 25, region: 'SOUTH' },
+  { fav: 'Louisville', dog: 'South Florida', favPct: 70, dogPct: 30, region: 'SOUTH' },
+  { fav: 'Georgia', dog: 'Saint Louis', favPct: 73, dogPct: 27, region: 'MIDWEST' },
+  { fav: 'Saint Marys', dog: 'Texas A&M', favPct: 68, dogPct: 32, region: 'SOUTH' },
+  { fav: 'Miami', dog: 'Missouri', favPct: 74, dogPct: 26, region: 'WEST' },
+  { fav: 'UCLA', dog: 'UCF', favPct: 75, dogPct: 25, region: 'EAST' },
+  { fav: 'Ohio State', dog: 'TCU', favPct: 72, dogPct: 28, region: 'EAST' },
+  { fav: 'BYU', dog: 'Texas', favPct: 70, dogPct: 30, region: 'WEST' },
+  { fav: 'Texas Tech', dog: 'High Point', favPct: 78, dogPct: 22, region: 'MIDWEST' },
+];
