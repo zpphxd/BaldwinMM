@@ -36,6 +36,11 @@ export const teams = {
   'Missouri': { logo: 'https://a.espncdn.com/media/motion/2022/0628/dm_220628_ncb_missouri_logo.png', seed: 10, region: 'WEST', color: '#C8102E' },
   'Texas A&M': { logo: 'https://a.espncdn.com/media/motion/2022/0628/dm_220628_ncb_texas_am_logo.png', seed: 10, region: 'SOUTH', color: '#C8102E' },
   'Texas Tech': { logo: 'https://a.espncdn.com/media/motion/2022/0628/dm_220628_ncb_texas_tech_logo.png', seed: 5, region: 'MIDWEST', color: '#C8102E' },
+  'South Florida': { logo: 'https://a.espncdn.com/media/motion/2022/0628/dm_220628_ncb_south_florida_logo.png', seed: 11, region: 'SOUTH', color: '#006B3F' },
+  'VCU': { logo: 'https://a.espncdn.com/media/motion/2022/0628/dm_220628_ncb_vcu_logo.png', seed: 11, region: 'SOUTH', color: '#000000' },
+  'Texas': { logo: 'https://a.espncdn.com/media/motion/2022/0628/dm_220628_ncb_texas_logo.png', seed: 11, region: 'WEST', color: '#BF5700' },
+  'Akron': { logo: 'https://a.espncdn.com/media/motion/2022/0628/dm_220628_ncb_akron_logo.png', seed: 12, region: 'MIDWEST', color: '#00205B' },
+  'High Point': { logo: 'https://a.espncdn.com/media/motion/2022/0628/dm_220628_ncb_high_point_logo.png', seed: 12, region: 'MIDWEST', color: '#C61E3B' },
 };
 
 export const getTeamLogo = (teamName) => {
